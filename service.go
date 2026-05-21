@@ -28,9 +28,10 @@ func SearchNetease(name string, pageNo, pageSize int) ([]Music, int64, error) {
 		}
 
 		musicList = append(musicList, Music{
-			ID:      s.ID,
-			Name:    s.Name,
-			Artists: strings.Join(artistNames, ","),
+			ID:         s.ID,
+			Name:       s.Name,
+			Artists:    strings.Join(artistNames, ","),
+			DurationMs: s.Duration,
 		})
 	}
 
@@ -50,11 +51,11 @@ func SaveMusicLogic(songID int) (*Music, error) {
 	neteaseCookie := os.Getenv("neteaseCookie")
 
 	var (
-		wg                     sync.WaitGroup
-		detailRes              DetailResponse
-		lyricRes               LyricResponse
-		urlRes                 URLResponse
-		detailErr, urlErr      error
+		wg                sync.WaitGroup
+		detailRes         DetailResponse
+		lyricRes          LyricResponse
+		urlRes            URLResponse
+		detailErr, urlErr error
 	)
 
 	wg.Add(3)

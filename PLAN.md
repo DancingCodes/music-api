@@ -21,8 +21,9 @@ music-api/
   model.go            # Music 结构体
   netease.go          # 网易云 DTO
   db.go               # GORM 连接
+  log.go              # 自定义 slog handler
   response.go         # 统一响应
-  httpclient.go       # GetJSON / 流式上传 COS
+  httpclient.go       # GetJSON / 上传 COS
 ```
 
 ## 路由

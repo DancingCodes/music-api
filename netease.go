@@ -9,9 +9,10 @@ type SearchResponse struct {
 }
 
 type SearchSong struct {
-	ID      uint   `json:"id"`
-	Name    string `json:"name"`
-	Artists []struct {
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Duration int    `json:"duration"`
+	Artists  []struct {
 		Name string `json:"name"`
 	} `json:"artists"`
 }
