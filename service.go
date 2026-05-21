@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -135,4 +137,27 @@ func GetMusicListLogic(pageNo, pageSize int) ([]Music, int64, error) {
 	err := DB.Offset(offset).Limit(pageSize).Order("id desc").Find(&musicList).Error
 
 	return musicList, total, err
+}
+
+func DeleteMusicLogic(id int) error {
+	var music Music
+	if err := DB.Where("id = ?", id).First(&music).Error; err != nil {
+		return fmt.Errorf("歌曲不存在")
+	}
+
+	if err := DB.Delete(&music).Error; err != nil {
+		return fmt.Errorf("删除失败: %w", err)
+	}
+
+	if cosClientObj != nil && music.Url != "" {
+		u, err := url.Parse(music.Url)
+		if err == nil {
+			objectKey := strings.TrimPrefix(u.Path, "/")
+			if _, err := cosClientObj.Object.Delete(context.Background(), objectKey); err != nil {
+				slog.Error("COS 文件删除失败", "objectKey", objectKey, "错误", err)
+			}
+		}
+	}
+
+	return nil
 }

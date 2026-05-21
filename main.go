@@ -11,8 +11,6 @@ import (
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 
-	slog.SetDefault(slog.New(&simpleHandler{w: os.Stdout, level: slog.LevelInfo}))
-
 	_ = godotenv.Load()
 
 	initCOS()

@@ -14,6 +14,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/net/search", GetNetSearch)
 	r.POST("/music/save", SaveMusic)
 	r.GET("/music/list", GetMusicList)
+	r.DELETE("/music/delete", DeleteMusic)
 
 	return r
 }
@@ -76,4 +77,20 @@ func GetMusicList(c *gin.Context) {
 		"list":  list,
 		"total": total,
 	})
+}
+
+func DeleteMusic(c *gin.Context) {
+	id, err := strconv.Atoi(c.Query("id"))
+	if err != nil || id <= 0 {
+		Error(c, "请传入有效的歌曲 id")
+		return
+	}
+
+	if err := DeleteMusicLogic(id); err != nil {
+		slog.Error("删除歌曲失败", "歌曲ID", id, "错误", err)
+		Error(c, err.Error())
+		return
+	}
+
+	Success(c, nil)
 }

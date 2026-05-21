@@ -20,18 +20,18 @@ music-api/
   service.go          # 业务逻辑
   model.go            # Music 结构体
   netease.go          # 网易云 DTO
-  db.go               # GORM 连接
-  log.go              # 自定义 slog handler
+  db.go               # GORM 连接 + 连接池配置
   response.go         # 统一响应
-  httpclient.go       # GetJSON / 上传 COS
+  httpclient.go       # GetJSON / COS 初始化 / 上传
 ```
 
 ## 路由
 
 ```
-GET  /net/search    # 搜索网易云
-POST /music/save    # 保存歌曲
-GET  /music/list    # 歌曲列表
+GET    /net/search    # 搜索网易云
+POST   /music/save    # 保存歌曲
+GET    /music/list    # 歌曲列表
+DELETE /music/delete  # 删除歌曲（含 COS 文件）
 ```
 
 ## 配置
@@ -81,6 +81,7 @@ headers := map[string]string{"Cookie": NETEASE_COOKIE}
 ```
 
 /music/save 流程：三个接口并发请求，拿到 COS 地址后写库。库中已有则直接返回。
+/music/delete 流程：删库记录，再删 COS 文件。COS 删除失败仅记日志，不影响结果。
 
 ## 响应格式
 

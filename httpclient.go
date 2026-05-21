@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	stdhttp "net/http"
+	"net/http"
 	"net/url"
 	"os"
 	"time"
@@ -13,7 +13,7 @@ import (
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
 
-var httpClientObj = &stdhttp.Client{Timeout: 10 * time.Second}
+var httpClientObj = &http.Client{Timeout: 10 * time.Second}
 
 var cosClientObj *cos.Client
 
@@ -39,7 +39,7 @@ func initCOS() {
 		slog.Error("cosBucketURL 解析失败", "错误", err)
 		os.Exit(1)
 	}
-	cosClientObj = cos.NewClient(&cos.BaseURL{BucketURL: u}, &stdhttp.Client{
+	cosClientObj = cos.NewClient(&cos.BaseURL{BucketURL: u}, &http.Client{
 		Transport: &cos.AuthorizationTransport{
 			SecretID:  secretID,
 			SecretKey: secretKey,
@@ -50,7 +50,7 @@ func initCOS() {
 func GetJSON[T any](urlStr string, headers map[string]string) (T, error) {
 	var result T
 
-	req, err := stdhttp.NewRequest("GET", urlStr, nil)
+	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return result, err
 	}
@@ -75,7 +75,7 @@ func UploadToCOS(audioURL string, objectKey string) (string, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != stdhttp.StatusOK {
+	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("音频地址返回异常状态码: %d", resp.StatusCode)
 	}
 
