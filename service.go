@@ -1,0 +1,137 @@
+package main
+
+import (
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
+	"sync"
+)
+
+func SearchNetease(name string, pageNo, pageSize int) ([]Music, int64, error) {
+	offset := (pageNo - 1) * pageSize
+	apiUrl := fmt.Sprintf(
+		"https://music.163.com/api/search/get/web?s=%s&type=1&offset=%d&limit=%d",
+		name, offset, pageSize,
+	)
+
+	raw, err := GetJSON[SearchResponse](apiUrl, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var musicList []Music
+	for _, s := range raw.Result.Songs {
+		var artistNames []string
+		for _, a := range s.Artists {
+			artistNames = append(artistNames, a.Name)
+		}
+
+		musicList = append(musicList, Music{
+			ID:      s.ID,
+			Name:    s.Name,
+			Artists: strings.Join(artistNames, ","),
+		})
+	}
+
+	if musicList == nil {
+		musicList = []Music{}
+	}
+
+	return musicList, raw.Result.SongCount, nil
+}
+
+func SaveMusicLogic(songID int) (*Music, error) {
+	var existing Music
+	if err := DB.Where("id = ?", songID).First(&existing).Error; err == nil {
+		return &existing, nil
+	}
+
+	neteaseCookie := os.Getenv("neteaseCookie")
+
+	var (
+		wg                     sync.WaitGroup
+		detailRes              DetailResponse
+		lyricRes               LyricResponse
+		urlRes                 URLResponse
+		detailErr, urlErr      error
+	)
+
+	wg.Add(3)
+
+	go func() {
+		defer wg.Done()
+		apiUrl := fmt.Sprintf("https://music.163.com/api/v3/song/detail?id=%d&c=[{id:%d}]", songID, songID)
+		detailRes, detailErr = GetJSON[DetailResponse](apiUrl, nil)
+	}()
+
+	go func() {
+		defer wg.Done()
+		apiUrl := fmt.Sprintf("https://music.163.com/api/song/lyric?id=%d&lv=-1&tv=-1", songID)
+		lyricRes, _ = GetJSON[LyricResponse](apiUrl, nil)
+	}()
+
+	go func() {
+		defer wg.Done()
+		apiUrl := fmt.Sprintf("https://music.163.com/api/song/enhance/player/url/v1?ids=[%d]&encodeType=aac&level=jymaster", songID)
+		urlRes, urlErr = GetJSON[URLResponse](apiUrl, map[string]string{
+			"Cookie": neteaseCookie,
+		})
+	}()
+
+	wg.Wait()
+
+	if detailErr != nil || len(detailRes.Songs) == 0 {
+		return nil, fmt.Errorf("获取详情失败")
+	}
+	if urlErr != nil || len(urlRes.Data) == 0 || urlRes.Data[0].URL == "" {
+		return nil, fmt.Errorf("获取播放链接失败或版权受限")
+	}
+
+	song := detailRes.Songs[0]
+	audioURL := urlRes.Data[0].URL
+	fileType := urlRes.Data[0].Type
+
+	cosPathPrefix := os.Getenv("cosPathPrefix")
+	cosKey := fmt.Sprintf("%s%d.%s", cosPathPrefix, songID, fileType)
+	cosURL, err := UploadToCOS(audioURL, cosKey)
+	if err != nil {
+		return nil, fmt.Errorf("上传文件失败: %w", err)
+	}
+
+	var artists []string
+	for _, ar := range song.Ar {
+		artists = append(artists, ar.Name)
+	}
+
+	newMusic := Music{
+		ID:         uint(song.ID),
+		Name:       song.Name,
+		Url:        cosURL,
+		PicUrl:     song.Al.PicURL,
+		Artists:    strings.Join(artists, ","),
+		DurationMs: song.Dt,
+		Lyric:      lyricRes.Lrc.Lyric,
+	}
+
+	if err := DB.Create(&newMusic).Error; err != nil {
+		return nil, fmt.Errorf("数据库入库失败: %w", err)
+	}
+
+	slog.Info("歌曲已保存", "歌曲ID", songID, "歌名", newMusic.Name)
+	return &newMusic, nil
+}
+
+func GetMusicListLogic(pageNo, pageSize int) ([]Music, int64, error) {
+	var musicList []Music
+	var total int64
+
+	if err := DB.Model(&Music{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (pageNo - 1) * pageSize
+	err := DB.Offset(offset).Limit(pageSize).Order("id desc").Find(&musicList).Error
+
+	return musicList, total, err
+}
