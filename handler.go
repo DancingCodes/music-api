@@ -11,10 +11,13 @@ func setupRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
-	r.GET("/net/search", GetNetSearch)
-	r.POST("/music/save", SaveMusic)
-	r.GET("/music/list", GetMusicList)
-	r.DELETE("/music/delete", DeleteMusic)
+	api := r.Group("/api")
+	{
+		api.GET("/net/search", GetNetSearch)
+		api.POST("/music/save", SaveMusic)
+		api.GET("/music/list", GetMusicList)
+		api.DELETE("/music/delete", DeleteMusic)
+	}
 
 	return r
 }

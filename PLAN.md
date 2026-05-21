@@ -28,10 +28,12 @@ music-api/
 ## 路由
 
 ```
-GET    /net/search    # 搜索网易云
-POST   /music/save    # 保存歌曲
-GET    /music/list    # 歌曲列表，可选 ?name=xxx 模糊搜索
-DELETE /music/delete  # 删除歌曲（含 COS 文件）
+所有接口统一 `/api` 前缀。
+
+GET    /api/net/search    # 搜索网易云
+POST   /api/music/save    # 保存歌曲
+GET    /api/music/list    # 歌曲列表，可选 ?name=xxx 模糊搜索
+DELETE /api/music/delete  # 删除歌曲（含 COS 文件）
 ```
 
 ## 配置
