@@ -30,7 +30,7 @@ music-api/
 ```
 GET    /net/search    # 搜索网易云
 POST   /music/save    # 保存歌曲
-GET    /music/list    # 歌曲列表
+GET    /music/list    # 歌曲列表，可选 ?name=xxx 模糊搜索
 DELETE /music/delete  # 删除歌曲（含 COS 文件）
 ```
 

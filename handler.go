@@ -65,8 +65,9 @@ func SaveMusic(c *gin.Context) {
 func GetMusicList(c *gin.Context) {
 	pageNo, _ := strconv.Atoi(c.DefaultQuery("pageNo", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+	name := c.Query("name")
 
-	list, total, err := GetMusicListLogic(pageNo, pageSize)
+	list, total, err := GetMusicListLogic(pageNo, pageSize, name)
 	if err != nil {
 		slog.Error("获取列表失败", "错误", err)
 		Error(c, "获取列表失败: "+err.Error())

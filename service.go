@@ -125,16 +125,22 @@ func SaveMusicLogic(songID int) (*Music, error) {
 	return &newMusic, nil
 }
 
-func GetMusicListLogic(pageNo, pageSize int) ([]Music, int64, error) {
+func GetMusicListLogic(pageNo, pageSize int, name string) ([]Music, int64, error) {
 	var musicList []Music
 	var total int64
 
-	if err := DB.Model(&Music{}).Count(&total).Error; err != nil {
+	query := DB.Model(&Music{})
+	if name != "" {
+		keyword := "%" + name + "%"
+		query = query.Where("name LIKE ? OR artists LIKE ?", keyword, keyword)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (pageNo - 1) * pageSize
-	err := DB.Offset(offset).Limit(pageSize).Order("id desc").Find(&musicList).Error
+	err := query.Offset(offset).Limit(pageSize).Order("id desc").Find(&musicList).Error
 
 	return musicList, total, err
 }
