@@ -15,6 +15,8 @@ import (
 
 var httpClientObj = &http.Client{Timeout: 10 * time.Second}
 
+var downloadClient = &http.Client{Timeout: 5 * time.Minute}
+
 var cosClientObj *cos.Client
 
 func initCOS() {
@@ -69,7 +71,7 @@ func GetJSON[T any](urlStr string, headers map[string]string) (T, error) {
 }
 
 func UploadToCOS(audioURL string, objectKey string) (string, error) {
-	resp, err := httpClientObj.Get(audioURL)
+	resp, err := downloadClient.Get(audioURL)
 	if err != nil {
 		return "", fmt.Errorf("音频下载失败: %w", err)
 	}
@@ -79,7 +81,15 @@ func UploadToCOS(audioURL string, objectKey string) (string, error) {
 		return "", fmt.Errorf("音频地址返回异常状态码: %d", resp.StatusCode)
 	}
 
-	_, err = cosClientObj.Object.Put(context.Background(), objectKey, resp.Body, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	opt := &cos.ObjectPutOptions{
+		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
+			ContentLength: resp.ContentLength,
+		},
+	}
+	_, err = cosClientObj.Object.Put(ctx, objectKey, resp.Body, opt)
 	if err != nil {
 		return "", fmt.Errorf("COS 上传失败: %w", err)
 	}

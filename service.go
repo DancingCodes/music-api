@@ -10,44 +10,25 @@ import (
 	"sync"
 )
 
-func SearchNetease(name string, pageNo, pageSize int) ([]Music, int64, error) {
+func SearchNetease(name string, pageNo, pageSize int) (map[string]any, error) {
 	offset := (pageNo - 1) * pageSize
 	apiUrl := fmt.Sprintf(
 		"https://music.163.com/api/search/get/web?s=%s&type=1&offset=%d&limit=%d",
-		name, offset, pageSize,
+		url.QueryEscape(name), offset, pageSize,
 	)
 
-	raw, err := GetJSON[SearchResponse](apiUrl, nil)
+	raw, err := GetJSON[map[string]any](apiUrl, nil)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	var musicList []Music
-	for _, s := range raw.Result.Songs {
-		var artistNames []string
-		for _, a := range s.Artists {
-			artistNames = append(artistNames, a.Name)
-		}
-
-		musicList = append(musicList, Music{
-			ID:         s.ID,
-			Name:       s.Name,
-			Artists:    strings.Join(artistNames, ","),
-			DurationMs: s.Duration,
-		})
-	}
-
-	if musicList == nil {
-		musicList = []Music{}
-	}
-
-	return musicList, raw.Result.SongCount, nil
+	return raw["result"].(map[string]any), nil
 }
 
 func SaveMusicLogic(songID int) (*Music, error) {
 	var existing Music
 	if err := DB.Where("id = ?", songID).First(&existing).Error; err == nil {
-		return &existing, nil
+		return nil, fmt.Errorf("歌曲 %s 已存在", existing.Name)
 	}
 
 	neteaseCookie := os.Getenv("neteaseCookie")

@@ -1,22 +1,5 @@
 package main
 
-// SearchResponse 搜索响应
-type SearchResponse struct {
-	Result struct {
-		Songs     []SearchSong `json:"songs"`
-		SongCount int64        `json:"songCount"`
-	} `json:"result"`
-}
-
-type SearchSong struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	Duration int    `json:"duration"`
-	Artists  []struct {
-		Name string `json:"name"`
-	} `json:"artists"`
-}
-
 // DetailResponse 详情响应
 type DetailResponse struct {
 	Songs []DetailSong `json:"songs"`

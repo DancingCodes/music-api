@@ -32,17 +32,14 @@ func GetNetSearch(c *gin.Context) {
 	pageNo, _ := strconv.Atoi(c.DefaultQuery("pageNo", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
-	list, total, err := SearchNetease(name, pageNo, pageSize)
+	result, err := SearchNetease(name, pageNo, pageSize)
 	if err != nil {
 		slog.Error("搜索失败", "错误", err)
 		Error(c, "搜索失败: "+err.Error())
 		return
 	}
 
-	Success(c, gin.H{
-		"list":  list,
-		"total": total,
-	})
+	Success(c, result)
 }
 
 func SaveMusic(c *gin.Context) {
