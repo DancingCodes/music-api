@@ -57,7 +57,7 @@ func SaveMusicLogic(songID int) (*Music, error) {
 
 	go func() {
 		defer wg.Done()
-		apiUrl := fmt.Sprintf("https://music.163.com/api/song/enhance/player/url/v1?ids=[%d]&encodeType=aac&level=jymaster", songID)
+		apiUrl := fmt.Sprintf("https://music.163.com/api/song/enhance/player/url/v1?ids=[%d]&encodeType=aac&level=standard", songID)
 		urlRes, urlErr = GetJSON[URLResponse](apiUrl, map[string]string{
 			"Cookie": neteaseCookie,
 		})
