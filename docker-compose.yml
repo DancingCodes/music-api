@@ -1,0 +1,16 @@
+services:
+  music-api:
+    image: ghcr.io/dancingcodes/music-api:latest
+    container_name: music-api
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    networks:
+      - public_network
+
+networks:
+  public_network:
+    name: public_network
+    external: true
